@@ -53,6 +53,7 @@ export function Board({
   const [stockOnly, setStockOnly] = useState(true);
   const [sparky, setSparky] = useState(false);
   const [reloadOnly, setReloadOnly] = useState(false);
+  const [singleUseOnly, setSingleUseOnly] = useState(false);
   const [starredOnly, setStarredOnly] = useState(false);
   const [includeOld, setIncludeOld] = useState(false);
   const [maxPrice, setMaxPrice] = useState("");
@@ -99,7 +100,7 @@ export function Board({
 
   useEffect(() => {
     setVisible(48);
-  }, [query, classes, maker, diameter, propellant, vendor, stockOnly, sparky, reloadOnly, starredOnly, includeOld, maxPrice, sort]);
+  }, [query, classes, maker, diameter, propellant, vendor, stockOnly, sparky, reloadOnly, singleUseOnly, starredOnly, includeOld, maxPrice, sort]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -142,6 +143,7 @@ export function Board({
       }
       if (sparky && !motor.sparky) return false;
       if (reloadOnly && motor.motor_type === "SU") return false;
+      if (singleUseOnly && motor.motor_type !== "SU") return false;
       if (starredOnly && !stars.includes(keyOf(motor))) return false;
       if (!includeOld && motor.discontinued) return false;
       if (maxPrice) {
@@ -164,7 +166,7 @@ export function Board({
       return (b.burn_time_s || 0) - (a.burn_time_s || 0);
     });
     return list;
-  }, [classes, diameter, includeOld, maker, maxPrice, motors, propellant, query, reloadOnly, sort, sparky, stars, starredOnly, stockOnly, vendor]);
+  }, [classes, diameter, includeOld, maker, maxPrice, motors, propellant, query, reloadOnly, singleUseOnly, sort, sparky, stars, starredOnly, stockOnly, vendor]);
 
   const open = motors.find((motor) => String(motor.id) === motorId) ?? null;
   const compareMotors = compare
@@ -208,6 +210,7 @@ export function Board({
     setStockOnly(true);
     setSparky(false);
     setReloadOnly(false);
+    setSingleUseOnly(false);
     setStarredOnly(false);
     setIncludeOld(false);
     setMaxPrice("");
@@ -436,7 +439,8 @@ export function Board({
           <div className="my-2 flex flex-col gap-1 text-sm">
             <Check label="In stock somewhere" checked={stockOnly} onChange={setStockOnly} />
             <Check label="Sparky only" checked={sparky} onChange={setSparky} />
-            <Check label="Reloads only" checked={reloadOnly} onChange={setReloadOnly} />
+            <Check label="Reloads only" checked={reloadOnly} onChange={(checked) => { setReloadOnly(checked); if (checked) setSingleUseOnly(false); }} />
+            <Check label="Single use only" checked={singleUseOnly} onChange={(checked) => { setSingleUseOnly(checked); if (checked) setReloadOnly(false); }} />
             <Check label="Starred only" checked={starredOnly} onChange={setStarredOnly} />
             <Check label="Include discontinued" checked={includeOld} onChange={setIncludeOld} />
           </div>

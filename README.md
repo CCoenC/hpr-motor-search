@@ -4,10 +4,10 @@ Look up a high-power motor — `I115`, `J350`, White Lightning, 54 mm — and se
 
 ## What it uses
 
-- **Stock, price, and quantity** come from the public hourly vendor snapshot at [motor.fusionspace.co](https://motor.fusionspace.co/api/v1/motors.json). That scrape covers AeroTech, Cesaroni, and Loki across the usual U.S. shops (BuyRocketMotors, Wildman, Animal Motor Works, Performance Hobbies, Balsa Machining, and others). **Motorman** ([the-motorman.net](https://www.the-motorman.net/)) is merged on top of that: his pages list everything he can stock, and only a line ending in `(n)` is actually on the shelf. He sells at launches, not by mail.
-- **Specs and thrust curves** come live from the [ThrustCurve.org API](https://www.thrustcurve.org/info/api.html).
+- **Stock, price, and quantity** come from this site's own scrape of the dealer sites (AeroTech, Animal Motor Works, Apogee, Balsa Machining, BuyRocketMotors, Chris' Rocket Supplies, Loki, Moto-Joe, New Century, Performance Hobbies, Sirius, Wildman, eRockets). If a shop doesn't load, that shop is left off until the next run. Apogee is included because they told us a free tool can read their motor charts. The published site scrapes on its own every hour. Visitors cannot change that. To change it, edit `SCRAPE_INTERVAL_MINUTES` in [src/lib/scrape/schedule.ts](src/lib/scrape/schedule.ts) and publish again. Set it to `null` to turn the timer off. **Motorman** ([the-motorman.net](https://www.the-motorman.net/)) is merged on top: his pages list everything he can stock, and only a line ending in `(n)` is actually on the shelf. He sells at launches, not by mail.
+- **Specs and thrust curves** come live from the [ThrustCurve.org API](https://www.thrustcurve.org/info/api.html). The motor list is AeroTech, Cesaroni, and Loki from that same catalog. Quest Q-Jets are shelf rows only, with no curve.
 
-The snapshot does not include a separate “restocked on” timestamp. HPR Motor Search shows **last checked** — when that vendor listing was scraped — and the quantity the page published.
+There is no separate “restocked on” timestamp. HPR Motor Search shows **last checked** — when that vendor listing was scraped — and the quantity the page published.
 
 ## Extras past a plain stock list
 

@@ -4,6 +4,7 @@ import type { Motor } from "../motors.ts";
 import { offersFromPulls, applyStored } from "./apply.ts";
 import { buildIndex, matchMotor, qjetDesignation } from "./match.ts";
 import { amwOffers, apogeeOffers, balsaOffers, chrisOffer, lokiGroupOffers, lokiOffer, motoOffer, performanceOffers, siriusOffers } from "./pages.ts";
+import { csHardwareOffers, csOffers, hawkHardware, hawkOffers, rocketariumCards, sunwardCheckValue, sunwardHardware } from "./extra.ts";
 import { aerotechLead, isMotorProduct } from "./shopify.ts";
 
 function motor(patch: Partial<Motor> & Pick<Motor, "id" | "designation" | "common_name" | "manufacturer">): Motor {
@@ -206,3 +207,106 @@ test("quest q-jets become shelf motors without joining the thrustcurve catalog",
   assert.equal(white?.propellant, "White Lightning");
   assert.equal(catalog.motors.filter((item) => item.case_info === "Quest Q-Jet").length, 5);
 });
+
+test("cs rocketry cards keep the sale price and the shelf count", () => {
+  const html = `
+    <form class="category-product-card"><div class="product_list_view">
+      <h3><a href="https://www.csrocketry.com/f39.html" title="Aerotech F39-6T">Aerotech F39-6T</a></h3>
+      <span class="sale_price">$12.00</span>
+      <span class="category-product-stock">Stock Level: 3</span>
+    </div><div class="product_grid_view">duplicate</div></form>
+    <form class="category-product-card"><div class="product_list_view">
+      <h3><a href="https://www.csrocketry.com/i115.html" title="Aerotech I115W-14A">Aerotech I115W-14A</a></h3>
+      <h3 class="category-product-price">$74.99</h3>
+      <strong>Out of stock</strong>
+    </div></form>
+    <form class="category-product-card"><div class="product_list_view">
+      <h3><a href="https://www.csrocketry.com/case.html" title="RMS-54/426 Complete Motor Hardware Set">RMS-54/426 Complete Motor Hardware Set</a></h3>
+      <span class="sale_price">$180.99</span>
+      <span class="category-product-stock">Stock Level: 1</span>
+    </div></form>`;
+  const motors = csOffers(html);
+  assert.equal(motors.length, 2);
+  assert.equal(motors[0]?.status, "in_stock");
+  assert.equal(motors[0]?.stockCount, 3);
+  assert.equal(motors[0]?.priceCents, 1200);
+  assert.equal(motors[1]?.status, "out_of_stock");
+  const hardware = csHardwareOffers(html);
+  assert.equal(hardware.length, 1);
+  assert.equal(hardware[0]?.vendor, "CS Rocketry");
+  assert.equal(hardware[0]?.kind, "complete");
+});
+
+test("rocketarium listings and onebadhawk loki rows parse", () => {
+  const cards = rocketariumCards(`
+    <div class="productListing-odd"><a href="https://www.rocketarium.com/RMS/24-40/Aft">RMS 24/40 Motor Aft Closure</a>
+    <meta itemprop="price" content="24.00"/></div>`);
+  assert.equal(cards.length, 1);
+  assert.equal(cards[0]?.priceCents, 2400);
+  const reloads = hawkOffers(
+    `<div class="paragraph">G 66 Loki Red. Two reloads per package. $78.00</div>`,
+    "https://onebadhawk.com/38mm--120ns-reload-kits.html",
+  );
+  assert.equal(reloads[0]?.designationHint, "G66");
+  assert.equal(reloads[0]?.packSize, 2);
+  assert.equal(reloads[0]?.priceCents, 7800);
+  const hardware = hawkHardware(
+    `<div class="paragraph">This is a 38mm 120Ns Motor Complete with a delay forward bulkhead. $155.00</div>`,
+    "https://onebadhawk.com/loki---38mm-hardware.html",
+  );
+  assert.equal(hardware[0]?.maker, "Loki Research");
+  assert.equal(hardware[0]?.size, "38/120");
+  assert.equal(hardware[0]?.priceCents, 15500);
+});
+
+test("sunward casings use the grain variation and simple products use the offer block", () => {
+  const json = '[{"attributes":{"attribute_pa_cti-case-size":"2-grain-case"},"display_price":55.5,"is_in_stock":true},{"attributes":{"attribute_pa_cti-case-size":"6gxl-grain-case"},"display_price":90,"is_in_stock":false}]';
+  const variable = sunwardHardware(
+    `<h1 class="product_title entry-title">CTI Pro38 Hardware Casing</h1><form data-product_variations="${json.replaceAll('"', "&" + "quot;")}"></form>`,
+    "https://www.sunward1.com/product/cti-pro38-hardware-casing/",
+  );
+  assert.equal(variable.length, 2);
+  assert.equal(variable[0]?.size, "Pro38-2G");
+  assert.equal(variable[0]?.status, "in_stock");
+  assert.equal(variable[0]?.priceCents, 5550);
+  assert.equal(variable[0]?.vendor, "Sunward");
+  assert.equal(variable[1]?.size, "Pro38-6GXL");
+  assert.equal(variable[1]?.status, "out_of_stock");
+  const simple = sunwardHardware(
+    `<h1 class="product_title">Pro24 Rear Closure</h1>
+     <script type="application/ld+json">{"@type":"Product","name":"Pro24 Rear Closure","offers":[{"@type":"Offer","price":"16.99","availability":"https://schema.org/OutOfStock"}]}</script>`,
+    "https://www.sunward1.com/product/pro24-rear-closure/",
+  );
+  assert.equal(simple[0]?.kind, "closure");
+  assert.equal(simple[0]?.priceCents, 1699);
+  assert.equal(simple[0]?.status, "out_of_stock");
+  const tool = sunwardHardware(
+    `<h1 class="product_title">ProDAT 38 Delay Adjustment Tool</h1>
+     <script type="application/ld+json">{"@type":"Product","offers":[{"price":"12.00","availability":"https://schema.org/InStock"}]}</script>`,
+    "https://www.sunward1.com/product/prodat-38-delay-adjustment-tool/",
+  );
+  assert.equal(tool.length, 0);
+  const pro150Json = '[{"attributes":{"attribute_pa_cti-case-size":"3-grain-case"},"display_price":420,"is_in_stock":true}]';
+  const pro150 = sunwardHardware(
+    `<h1 class="product_title">CTI Pro150 Hardware Casing Set</h1><form data-product_variations="${pro150Json.replaceAll('"', "&" + "quot;")}"></form>`,
+    "https://www.sunward1.com/product/cti-pro150-hardware-casing-set/",
+  );
+  assert.equal(pro150[0]?.size, "Pro150-3G");
+  assert.equal(pro150[0]?.diameterMm, 150);
+  assert.equal(pro150[0]?.kind, "complete");
+  const grains = sunwardHardware(
+    `<h1 class="product_title">Standard J Fuel Grains Case of 12 by HyperTEK</h1>
+     <script type="application/ld+json">{"@type":"Product","offers":[{"price":"89.00","availability":"https://schema.org/InStock"}]}</script>`,
+    "https://www.sunward1.com/product/standard-j-fuel-grains-case-of-12-by-hypertek/",
+  );
+  assert.equal(grains.length, 0);
+});
+
+test("sunward splash adds the two digit-strings as numbers", () => {
+  const twelve = "((+!+[]+[])+(+!+[]+!![]))";
+  const three = "((+!+[]+!![]+!![]))";
+  assert.equal(sunwardCheckValue(twelve, three), 15);
+  assert.equal(sunwardCheckValue("alert(1)", three), null);
+});
+
+

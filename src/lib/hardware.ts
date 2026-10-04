@@ -32,7 +32,7 @@ export type HardwarePart = {
   listings: HardwareOffer[];
 };
 
-const SKIP = /nozzle|wrench|drill|grease|igniter|starter|o-?ring|delay tool|delay kit|retaining ring\b|retainer|motor mount|tailcone|liner|clothes|shirt/i;
+const SKIP = /nozzle|wrench|drill|grease|igniter|starter|o-?ring|delay tool|delay kit|retaining ring\b|retainer|motor mount|tailcone|liner|clothes|shirt|fuel grain|case of \d/i;
 
 export function classifyHardware(title: string, makerHint?: string | null): Omit<HardwareOffer, "title" | "vendor" | "vendorSlug" | "url" | "status" | "priceCents" | "stockCount"> | null {
   const text = title.replace(/&/g, "&").replace(/"/g, '"').replace(/\s+/g, " ").trim();
@@ -191,7 +191,7 @@ function sizeOf(title: string, maker: string) {
   }
   const dashed = title.match(/\b(\d{2,3})\s*-\s*(\d{3,5})\b/);
   if (dashed && maker === "AeroTech" && /casing|hardware|case/i.test(title)) return `${dashed[1]}/${dashed[2]}`;
-  const pro = title.match(/Pro\s*(\d{2})\s*[,/-]?\s*(\d)\s*G(XL)?/i) ?? title.match(/\b(\d{2})\s*mm\s+(\d)\s*G(XL)?/i);
+  const pro = title.match(/Pro\s*(\d{2,3})\s*[,/-]?\s*(\d)\s*G(XL)?/i) ?? title.match(/\b(\d{2,3})\s*mm\s+(\d)\s*G(XL)?/i);
   if (pro && (maker === "Cesaroni Technology" || /pro/i.test(title))) return `Pro${pro[1]}-${pro[2]}G${(pro[3] ?? "").toUpperCase()}`;
   const mmNs = title.match(/\b(\d{2,3})\s*mm\b[^\d]{0,16}(\d{2,5})\s*N[-\s]?s(?:ec)?/i);
   if (mmNs) return `${mmNs[1]}/${mmNs[2]}`;
@@ -201,11 +201,11 @@ function sizeOf(title: string, maker: string) {
 }
 
 function diameterOf(title: string, size: string | null) {
-  const fromSize = size?.match(/^(\d{2,3})/) ?? size?.match(/Pro(\d{2})/i);
+  const fromSize = size?.match(/^(\d{2,3})/) ?? size?.match(/Pro(\d{2,3})/i);
   if (fromSize) return Number(fromSize[1]);
   const mm = title.match(/\b(\d{2,3})\s*mm\b/i);
   if (mm) return Number(mm[1]);
-  const pro = title.match(/\bPro\s*(\d{2})\b/i);
+  const pro = title.match(/\bPro\s*(\d{2,3})\b/i);
   if (pro) return Number(pro[1]);
   const leading = title.match(/^(\d{2,3})\s*\//);
   return leading ? Number(leading[1]) : null;
@@ -214,6 +214,7 @@ function diameterOf(title: string, size: string | null) {
 function roleOf(title: string) {
   const bits: string[] = [];
   if (/boat\s*tail/i.test(title)) bits.push("boattail");
+  if (/tapered/i.test(title)) bits.push("tapered");
   if (/floating/i.test(title)) bits.push("floating");
   if (/plugged/i.test(title)) bits.push("plugged");
   if (/extended/i.test(title)) bits.push("extended");

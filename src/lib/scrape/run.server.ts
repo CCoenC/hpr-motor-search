@@ -5,6 +5,7 @@ import { applyStored, offersFromPulls, type StoredOffer, type VendorPull } from 
 import { SCRAPE_UA } from "./http.ts";
 import { scrapeAmw, scrapeApogee, scrapeBalsa, scrapeChris, scrapeErockets, scrapeLoki, scrapeMotoJoe, scrapePerformance, scrapeSirius } from "./pages.ts";
 import { aerotechLead, scrapeShopify, wildmanQuantities } from "./shopify.ts";
+import { scrapeCsRocketry, scrapeOnebadhawk, scrapeRocketarium, scrapeSunward } from "./extra.ts";
 import { scrapeHardwareShops } from "./hardware.ts";
 import type { HardwareOffer } from "../hardware.ts";
 
@@ -188,7 +189,7 @@ async function scrapeAll(): Promise<ScrapeMeta> {
     ),
     scrapeShopify({ slug: "newcenturyrocketry", name: "New Century Rocketry", origin: "https://newcenturyrocketry.shop", checkedAt }),
   ]);
-  const [shopify, hardwareShops, balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee] = await Promise.all([
+  const [shopify, hardwareShops, balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee, cs, hawk, rocketarium, sunward] = await Promise.all([
     shopifyPromise,
     scrapeHardwareShops().catch(() => [] as HardwareOffer[]),
     scrapeBalsa(checkedAt),
@@ -200,9 +201,13 @@ async function scrapeAll(): Promise<ScrapeMeta> {
     scrapeSirius(checkedAt),
     scrapeMotoJoe(checkedAt),
     scrapeApogee(checkedAt),
+    scrapeCsRocketry(checkedAt),
+    scrapeOnebadhawk(checkedAt),
+    scrapeRocketarium().catch(() => [] as HardwareOffer[]),
+    scrapeSunward().catch(() => [] as HardwareOffer[]),
   ]);
-  const pulls = [...shopify.map((shop) => shop.pull), balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee];
-  const hardware = [...shopify.flatMap((shop) => shop.hardware), ...hardwareShops];
+  const pulls = [...shopify.map((shop) => shop.pull), balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee, cs.pull, hawk.pull];
+  const hardware = [...shopify.flatMap((shop) => shop.hardware), ...hardwareShops, ...cs.hardware, ...hawk.hardware, ...rocketarium, ...sunward];
   const { stored, vendors } = offersFromPulls(base.motors, pulls satisfies VendorPull[]);
   const previous = await readCache();
   if (!stored.length && previous) {

@@ -148,7 +148,7 @@ export function HardwareBoard({
             <p className="mt-2 text-sm text-muted">{open.note}</p>
             <ul className="mt-4 flex flex-col gap-2">
               {open.listings.map((listing) => (
-                <li key={`${listing.vendorSlug}-${listing.url}`} className="rounded-2xl border border-line bg-bg-2 p-3">
+                <li key={`${listing.vendorSlug}-${listing.url}-${listing.title}`} className="rounded-2xl border border-line bg-bg-2 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-medium">{listing.vendor}</div>

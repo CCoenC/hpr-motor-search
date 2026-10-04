@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-bg: #090b10;
+  --color-bg-2: #10141c;
+  --color-surface: #151b26;
+  --color-surface-2: #1c2433;
+  --color-line: #2a3344;
+  --color-fg: #f4f1ea;
+  --color-muted: #9aa3b5;
+  --color-faint: #6d7688;
+  --color-flame: #d7dbe3;
+  --color-amber: #e4e7ee;
+  --color-ok: #3dd68c;
+  --color-bad: #ff5d73;
+  --color-info: #7eb6ff;
+  --color-ink: #14171e;
+  --radius-card: 1rem;
+}
+
+:root {
+  --page-wash: #d7dbe338;
+  --page-wash-2: #7eb6ff1f;
+}
+
+html[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-bg-2: #f7f1f3;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4e8eb;
+  --color-line: #ead6db;
+  --color-fg: #2a1218;
+  --color-muted: #6d4550;
+  --color-faint: #8d6670;
+  --color-flame: #6e1633;
+  --color-amber: #8a2344;
+  --color-ok: #0c7a44;
+  --color-bad: #b4233a;
+  --color-info: #7a3a4e;
+  --color-ink: #ffffff;
+  --page-wash: #6e16331c;
+  --page-wash-2: #6e163312;
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(900px 420px at 100% -12%, var(--page-wash), transparent 58%),
+      radial-gradient(700px 360px at -10% 0%, var(--page-wash-2), transparent 55%),
+      var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-flame) 45%, transparent);
+    color: var(--color-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-flame);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

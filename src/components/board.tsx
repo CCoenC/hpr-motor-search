@@ -602,7 +602,7 @@ export function Board({
         </main>
       </div>
 
-      <div className="fixed inset-x-3 bottom-3 z-30 flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/95 px-3 py-2 shadow-2xl backdrop-blur sm:inset-x-auto sm:right-4 sm:left-4">
+      <div className="fixed inset-x-3 bottom-3 z-[45] flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface/95 px-3 py-2 shadow-2xl backdrop-blur sm:inset-x-auto sm:right-4 sm:left-4">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
           {compareMotors.map((motor) => (
             <span key={motor.id} className="inline-flex items-center gap-1 rounded-full bg-bg-2 px-2 py-1">

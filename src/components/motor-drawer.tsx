@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import { getCurve } from "@/lib/catalog.functions";
 import {
@@ -34,6 +34,15 @@ export function MotorDrawer({
 }) {
   const [samples, setSamples] = useState<Sample[]>([]);
   const [note, setNote] = useState("Pulling the thrust curve…");
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const addedTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    setAddedId(null);
+    return () => {
+      if (addedTimer.current != null) window.clearTimeout(addedTimer.current);
+    };
+  }, [motor.id]);
 
   useEffect(() => {
     let cancel = false;
@@ -79,7 +88,7 @@ export function MotorDrawer({
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <button className="absolute inset-0 bg-bg/70" aria-label="Close motor" onClick={onClose} />
-      <aside className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-line bg-surface px-4 py-4 shadow-2xl sm:px-5">
+      <aside className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-line bg-surface px-4 pt-4 pb-28 shadow-2xl sm:px-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-mono text-xs tracking-wide text-faint uppercase">
@@ -191,19 +200,23 @@ export function MotorDrawer({
                   </a>
                   <button
                     className="min-h-11 rounded-full bg-flame px-3 text-sm font-bold text-ink"
-                    onClick={() =>
+                    onClick={() => {
+                      const id = `${motor.id}-${listing.vendor_slug}-${listing.url}`;
                       onPile({
-                        id: `${motor.id}-${listing.vendor_slug}-${listing.url}`,
+                        id,
                         designation: motor.designation,
                         vendor: listing.vendor,
                         unitPriceCents: listing.unit_price_cents,
                         url: listing.url,
                         hazmat: motor.hazmat,
                         qty: listing.pack_size > 1 ? listing.pack_size : 1,
-                      })
-                    }
+                      });
+                      setAddedId(id);
+                      if (addedTimer.current != null) window.clearTimeout(addedTimer.current);
+                      addedTimer.current = window.setTimeout(() => setAddedId(null), 1000);
+                    }}
                   >
-                    Add to pile
+                    {addedId === `${motor.id}-${listing.vendor_slug}-${listing.url}` ? "Added" : "Add to pile"}
                   </button>
                 </div>
               </li>

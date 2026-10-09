@@ -613,11 +613,16 @@ export function Board({
             </span>
           ))}
           {!compareMotors.length && !cart.length ? <span className="text-faint">Star a motor, or drop two into compare.</span> : null}
-          {cart.slice(-3).map((item) => (
+          {cart.slice(-5).map((item) => (
             <span key={item.id} className="rounded-full bg-bg-2 px-2 py-1 font-mono text-xs">
               {item.designation} {money(item.unitPriceCents)}
             </span>
           ))}
+          {cart.length > 5 ? (
+            <button className="rounded-full bg-bg-2 px-2 py-1 font-mono text-xs text-muted" onClick={() => setPileOpen(true)}>
+              +{cart.length - 5} more
+            </button>
+          ) : null}
         </div>
         <button
           className="min-h-11 rounded-full border border-line px-3 text-sm disabled:opacity-40"

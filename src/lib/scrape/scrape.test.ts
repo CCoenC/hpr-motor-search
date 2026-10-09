@@ -237,6 +237,19 @@ test("cs rocketry cards keep the sale price and the shelf count", () => {
   assert.equal(hardware[0]?.kind, "complete");
 });
 
+test("cs rocketry ignores the reward amount in the image title", () => {
+  const html = `<form class="category-product-card"><div class="product_list_view">
+    <a title="Aerotech F62-10FJ (2-pack) Black Max Rocket Motor - (Earn 37 reward points on this item worth $1.11)"></a>
+    <h3><a href="https://www.csrocketry.com/f62.html" title="Aerotech F62-10FJ (2-pack) Black Max Rocket Motor">Aerotech F62-10FJ (2-pack) Black Max Rocket Motor</a></h3>
+    <h3 class="category-product-price"> $37.99</h3>
+    <span class="category-product-stock">Stock Level: 59</span>
+  </div></form>`;
+  const motors = csOffers(html);
+  assert.equal(motors.length, 1);
+  assert.equal(motors[0]?.priceCents, 3799);
+  assert.equal(motors[0]?.stockCount, 59);
+});
+
 test("rocketarium listings and onebadhawk loki rows parse", () => {
   const cards = rocketariumCards(`
     <div class="productListing-odd"><a href="https://www.rocketarium.com/RMS/24-40/Aft">RMS 24/40 Motor Aft Closure</a>

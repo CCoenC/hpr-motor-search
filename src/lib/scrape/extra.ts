@@ -96,6 +96,15 @@ export async function scrapeCsRocketry(checkedAt: string): Promise<{ pull: Vendo
   }
 }
 
+function csPrice(list: string) {
+  const sale = list.match(/sale_price">\s*\$([0-9,.]+)/i)?.[1];
+  if (sale) return sale;
+  const tagged = list.match(/category-product-price">\s*\$([0-9,.]+)/i)?.[1];
+  if (tagged) return tagged;
+  const stripped = list.replace(/worth\s*\$[0-9,.]+/gi, "");
+  return stripped.match(/\$([0-9,.]+)/)?.[1];
+}
+
 export function csOffers(html: string): RawOffer[] {
   const offers: RawOffer[] = [];
   for (const card of html.split("category-product-card").slice(1)) {
@@ -103,7 +112,7 @@ export function csOffers(html: string): RawOffer[] {
     const link = list.match(/<h3><a href="([^"]+)" title="([^"]+)"/i);
     if (!link) continue;
     const title = decode(link[2]).replace(/\s+-\s+\(Earn[\s\S]*$/i, "").trim();
-    const price = list.match(/sale_price">\s*\$([0-9,.]+)/i)?.[1] ?? list.match(/\$([0-9,.]+)/)?.[1];
+    const price = csPrice(list);
     if (!title || !price || classifyHardware(title)) continue;
     if (!/\b[A-O]\d{2,4}/i.test(title)) continue;
     const stock = list.match(/Stock Level:\s*(\d+)/i);
@@ -129,7 +138,7 @@ export function csHardwareOffers(html: string): HardwareOffer[] {
     const link = list.match(/<h3><a href="([^"]+)" title="([^"]+)"/i);
     if (!link) continue;
     const title = decode(link[2]).replace(/\s+-\s+\(Earn[\s\S]*$/i, "").trim();
-    const price = list.match(/sale_price">\s*\$([0-9,.]+)/i)?.[1] ?? list.match(/\$([0-9,.]+)/)?.[1];
+    const price = csPrice(list);
     const classified = classifyHardware(title);
     if (!title || !price || !classified) continue;
     const stock = list.match(/Stock Level:\s*(\d+)/i);

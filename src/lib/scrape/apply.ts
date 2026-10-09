@@ -109,10 +109,27 @@ function matchPull(pull: VendorPull, index: MotorIndex) {
   return [...grouped.values()].map(collapseOne);
 }
 
+function productKey(offer: StoredOffer) {
+  try {
+    const id = new URL(offer.url).searchParams.get("virtuemart_product_id");
+    if (id) return `vm:${id}`;
+  } catch {
+    // A relative or junk URL is keyed by the string below.
+  }
+  return `url:${offer.url.split("#")[0]}`;
+}
+
 function collapseOne(offers: StoredOffer[]): StoredOffer {
-  const inStock = offers.filter((offer) => offer.status === "in_stock");
-  const special = offers.filter((offer) => offer.status === "special_order");
-  const pool = inStock.length ? inStock : special.length ? special : offers;
+  const seen = new Set<string>();
+  const unique = offers.filter((offer) => {
+    const key = productKey(offer);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const inStock = unique.filter((offer) => offer.status === "in_stock");
+  const special = unique.filter((offer) => offer.status === "special_order");
+  const pool = inStock.length ? inStock : special.length ? special : unique;
   const best = pool.reduce((left, right) => ((left.unitPriceCents ?? 1e12) <= (right.unitPriceCents ?? 1e12) ? left : right));
   const counted = inStock.filter((offer) => offer.stockCount != null);
   const stock = counted.reduce((sum, offer) => sum + (offer.stockCount ?? 0), 0);

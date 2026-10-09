@@ -170,6 +170,33 @@ test("a trusted vendor replaces its snapshot listings", () => {
   assert.equal(stored.length, 1);
 });
 
+test("the same AMW product in two categories is counted once", () => {
+  const catalog = [
+    motor({ id: 20, designation: "K850DM", common_name: "K850", manufacturer: "AeroTech", propellant: "Dark Matter", diameter_mm: 54 }),
+  ];
+  const listing = (id: string, category: string, stock: number) => ({
+    title: "K850DM DMS",
+    url: `https://cart.amwprox.com/index.php?option=com_virtuemart&view=productdetails&virtuemart_product_id=${id}&virtuemart_category_id=${category}&Itemid=533`,
+    status: "in_stock" as const,
+    priceCents: 33099,
+    packSize: 1,
+    stockCount: stock,
+    leadTime: null,
+  });
+  const { stored } = offersFromPulls(catalog, [
+    {
+      slug: "amw",
+      name: "Animal Motor Works",
+      ok: true,
+      note: null,
+      checkedAt: "2026-10-08T00:00:00Z",
+      offers: [listing("1297", "104", 2), listing("1297", "112", 2), listing("1300", "112", 3)],
+    },
+  ]);
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0]?.stockCount, 5);
+});
+
 test("quest q-jets become shelf motors without joining the thrustcurve catalog", () => {
   assert.equal(qjetDesignation("Quest Q-Jet C18-4W Rocket Engines (2pk)")?.designation, "C18W-4");
   assert.equal(qjetDesignation("I115W reload")?.designation, undefined);

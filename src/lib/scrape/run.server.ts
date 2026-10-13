@@ -12,6 +12,7 @@ import type { HardwareOffer } from "../hardware.ts";
 import { SCRAPE_INTERVAL_MINUTES } from "./schedule.ts";
 import seedScrape from "../../../data/vendor-scrape.json";
 import seedHardware from "../../../data/hardware.json";
+import seedCatalog from "../../../data/motor-catalog.json";
 
 const SPEC_MAX_AGE = 24 * 60 * 60 * 1000;
 const TC_SEARCH = "https://www.thrustcurve.org/api/v1/search.json";
@@ -24,6 +25,7 @@ let runLock: Promise<ScrapeMeta> | null = null;
 let memorySpecs: string | null = null;
 let memoryScrape: string | null = null;
 let memoryHardware: string | null = null;
+let specFailureAt = 0;
 
 function storeDir() {
   // The published function is read-only except for /tmp. /var/task/data cannot be created.
@@ -135,9 +137,35 @@ export async function applyVendorScrape(catalog: Catalog) {
   });
 }
 
+function bareCatalog(catalog: Catalog): Catalog {
+  return {
+    ...catalog,
+    motors: catalog.motors.map((motor) => ({
+      ...motor,
+      listings: [],
+      in_stock: false,
+      vendor_count: 0,
+      in_stock_vendor_count: 0,
+      cheapest_in_stock: null,
+    })),
+  };
+}
+
+function bundledCatalog(): Catalog | null {
+  try {
+    return bareCatalog(parseCatalog(seedCatalog));
+  } catch {
+    return null;
+  }
+}
+
 export async function loadMotorCatalog(): Promise<Catalog> {
   const fresh = await readSpecCache(false);
   if (fresh) return fresh;
+  if (Date.now() - specFailureAt < 5 * 60 * 1000) {
+    const recent = (await readSpecCache(true)) ?? bundledCatalog();
+    if (recent) return recent;
+  }
   try {
     const picked = new Map<string, { motor: Motor; files: number }>();
     for (const manufacturer of TC_MAKERS) {
@@ -149,7 +177,7 @@ export async function loadMotorCatalog(): Promise<Catalog> {
           "User-Agent": SCRAPE_UA,
         },
         body: JSON.stringify({ manufacturer, maxResults: 1000 }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) throw new Error(`ThrustCurve ${response.status}`);
       const body = (await response.json()) as { results?: TcRow[] };
@@ -167,10 +195,12 @@ export async function loadMotorCatalog(): Promise<Catalog> {
     const catalog: Catalog = { generatedAt: new Date().toISOString(), motors };
     const body = JSON.stringify(catalog);
     memorySpecs = body;
+    specFailureAt = 0;
     await saveFile(storePaths().specs, body);
     return catalog;
   } catch (error) {
-    const stale = await readSpecCache(true);
+    specFailureAt = Date.now();
+    const stale = (await readSpecCache(true)) ?? bundledCatalog();
     if (stale) return stale;
     throw error;
   }
@@ -303,17 +333,7 @@ async function readSpecCache(allowStale: boolean): Promise<Catalog | null> {
       raw = await readFile(specs, "utf8");
     }
     const catalog = parseCatalog(JSON.parse(raw));
-    return {
-      ...catalog,
-      motors: catalog.motors.map((motor) => ({
-        ...motor,
-        listings: [],
-        in_stock: false,
-        vendor_count: 0,
-        in_stock_vendor_count: 0,
-        cheapest_in_stock: null,
-      })),
-    };
+    return bareCatalog(catalog);
   } catch {
     return null;
   }

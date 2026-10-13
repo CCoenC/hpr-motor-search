@@ -96,38 +96,42 @@ export const getCurve = createServerFn({ method: "POST" })
     if (data.designation) queries.push({ designation: data.designation });
     if (data.commonName) queries.push({ commonName: data.commonName });
 
-    let motorId: string | null = null;
-    for (const query of queries) {
-      const found = await postJson("https://www.thrustcurve.org/api/v1/search.json", query);
-      const results = (found.results ?? []) as TcMotor[];
-      const match = pickMotor(results, data.designation, data.commonName);
-      if (match?.motorId) {
-        motorId = match.motorId;
-        break;
+    try {
+      let motorId: string | null = null;
+      for (const query of queries) {
+        const found = await postJson("https://www.thrustcurve.org/api/v1/search.json", query);
+        const results = (found.results ?? []) as TcMotor[];
+        const match = pickMotor(results, data.designation, data.commonName);
+        if (match?.motorId) {
+          motorId = match.motorId;
+          break;
+        }
       }
-    }
 
-    if (!motorId) {
-      const miss = { samples: [] as Sample[], note: "ThrustCurve has no file for this motor." };
-      curveCache.set(cacheKey, miss);
-      return miss;
-    }
+      if (!motorId) {
+        const miss = { samples: [] as Sample[], note: "ThrustCurve has no file for this motor." };
+        curveCache.set(cacheKey, miss);
+        return miss;
+      }
 
-    const downloaded = await postJson("https://www.thrustcurve.org/api/v1/download.json", {
-      motorIds: [motorId],
-      data: "samples",
-    });
-    const first = (downloaded.results ?? [])[0] as { samples?: Sample[] } | undefined;
-    const samples = (first?.samples ?? []).filter(
-      (sample) => Number.isFinite(sample.time) && Number.isFinite(sample.thrust),
-    );
-    const peak = samples.reduce((max, sample) => Math.max(max, sample.thrust), 0);
-    const result = {
-      samples,
-      note: samples.length
-        ? `ThrustCurve.org · ${samples.length} samples · peak ${Math.round(peak)} N`
-        : "The curve file came back empty.",
-    };
-    curveCache.set(cacheKey, result);
-    return result;
+      const downloaded = await postJson("https://www.thrustcurve.org/api/v1/download.json", {
+        motorIds: [motorId],
+        data: "samples",
+      });
+      const first = (downloaded.results ?? [])[0] as { samples?: Sample[] } | undefined;
+      const samples = (first?.samples ?? []).filter(
+        (sample) => Number.isFinite(sample.time) && Number.isFinite(sample.thrust),
+      );
+      const peak = samples.reduce((max, sample) => Math.max(max, sample.thrust), 0);
+      const result = {
+        samples,
+        note: samples.length
+          ? `ThrustCurve.org · ${samples.length} samples · peak ${Math.round(peak)} N`
+          : "The curve file came back empty.",
+      };
+      curveCache.set(cacheKey, result);
+      return result;
+    } catch {
+      return { samples: [] as Sample[], note: "ThrustCurve is down. Specs, price, and stock still load." };
+    }
   });

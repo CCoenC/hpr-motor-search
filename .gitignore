@@ -9,7 +9,6 @@ screenshots
 .node_modules.lock
 data/relay.json
 data/fusion-catalog.json
-data/motor-catalog.json
 *.log
 .env
 .env.*

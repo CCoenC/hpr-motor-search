@@ -545,7 +545,7 @@ export function Board({
                     >
                       <span className="font-extrabold tracking-tight">{motor.designation}</span>
                       <span className="ml-2 text-sm text-muted">
-                        {shortMaker(motor.manufacturer)} · {motor.propellant || "—"} · {typeLabel(motor)} · {motor.diameter_mm} mm · {round(motor.total_impulse_ns)} N·s
+                        {shortMaker(motor.manufacturer)} · {motor.propellant || "—"} · {typeLabel(motor)} · {motor.diameter_mm} mm{motor.case_info ? ` · ${motor.case_info}` : ""} · {round(motor.total_impulse_ns)} N·s
                       </span>
                     </button>
                     <span className="font-mono text-sm font-semibold tabular-nums">
@@ -575,6 +575,7 @@ export function Board({
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-muted">
                       <Pill>{motor.impulse_class} · {motor.diameter_mm} mm</Pill>
+                      {motor.case_info ? <Pill>{motor.case_info}</Pill> : null}
                       <Pill>{round(motor.total_impulse_ns)} N·s</Pill>
                       <Pill>{round(motor.avg_thrust_n)} N</Pill>
                       <Pill>{round(motor.burn_time_s, 1)} s</Pill>

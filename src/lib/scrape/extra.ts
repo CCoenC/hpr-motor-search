@@ -147,8 +147,8 @@ export function csHardwareOffers(html: string): HardwareOffer[] {
     offers.push({
       ...classified,
       title,
-      vendor: "CS Rocketry",
-      vendorSlug: "cs_rocketry",
+      vendor: "Chris' Rocket Supplies",
+      vendorSlug: "csrocketry",
       url: link[1],
       status: out ? "out_of_stock" : "in_stock",
       priceCents: centsFromDollars(price),

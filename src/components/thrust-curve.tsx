@@ -51,7 +51,12 @@ export function ThrustCurve({ series, height = 220 }: { series: Series[]; height
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--color-line)" vertical={false} />
-          <XAxis dataKey="time" tick={axis} tickFormatter={(value: number) => `${value}s`} />
+          <XAxis
+            dataKey="time"
+            tick={axis}
+            minTickGap={28}
+            tickFormatter={(value: number) => `${Number(value).toFixed(1)}s`}
+          />
           <YAxis tick={axis} width={46} tickFormatter={(value: number) => `${value}`} />
           <Tooltip
             contentStyle={{
@@ -60,7 +65,7 @@ export function ThrustCurve({ series, height = 220 }: { series: Series[]; height
               borderRadius: 12,
               color: "var(--color-fg)",
             }}
-            labelFormatter={(label) => `${label} s`}
+            labelFormatter={(label) => `${Number(label).toFixed(1)} s`}
             formatter={(value, name) => [`${value} N`, name]}
           />
           {series.length > 1 ? <Legend /> : null}

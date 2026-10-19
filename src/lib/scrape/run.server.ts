@@ -236,7 +236,7 @@ async function scrapeAll(): Promise<ScrapeMeta> {
     scrapeRocketarium().catch(() => [] as HardwareOffer[]),
     scrapeSunward().catch(() => [] as HardwareOffer[]),
   ]);
-  const pulls = [...shopify.map((shop) => shop.pull), balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee, cs.pull, hawk.pull];
+  const pulls = [...shopify.map((shop) => shop.pull), balsa, performance, chris, loki, erockets, amw, sirius, moto, apogee, hawk.pull];
   const hardware = [...shopify.flatMap((shop) => shop.hardware), ...hardwareShops, ...cs.hardware, ...hawk.hardware, ...rocketarium, ...sunward];
   const { stored, vendors } = offersFromPulls(base.motors, pulls satisfies VendorPull[]);
   const previous = await readCache();
@@ -268,7 +268,14 @@ export async function loadHardware(): Promise<{ ranAt: string | null; offers: Ha
     if (!best) return item;
     return Date.parse(item.ranAt ?? "") > Date.parse(best.ranAt ?? "") ? item : best;
   }, null as { ranAt: string | null; offers: HardwareOffer[] } | null);
-  return picked ?? { ranAt: null, offers: [] };
+  return picked
+    ? {
+        ...picked,
+        offers: picked.offers.map((offer) =>
+          offer.vendorSlug === "cs_rocketry" ? { ...offer, vendor: "Chris' Rocket Supplies", vendorSlug: "csrocketry" } : offer,
+        ),
+      }
+    : { ranAt: null, offers: [] };
 }
 
 function safeParse(raw: string | null): unknown {
@@ -298,7 +305,13 @@ async function readCache(): Promise<CacheFile | null> {
   const disk = asCache(await readJsonFile(storePaths().cache));
   const db = asCache(safeParse(await readDbBody("vendor-scrape")));
   const seed = asCache(seedScrape);
-  return [memory, disk, db, seed].reduce(newerCache, null);
+  const picked = [memory, disk, db, seed].reduce(newerCache, null);
+  if (!picked) return null;
+  return {
+    ...picked,
+    offers: picked.offers.filter((offer) => offer.vendorSlug !== "cs_rocketry"),
+    vendors: picked.vendors.filter((vendor) => vendor.slug !== "cs_rocketry"),
+  };
 }
 
 type TcRow = {

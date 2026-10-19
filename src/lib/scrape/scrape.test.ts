@@ -260,7 +260,7 @@ test("cs rocketry cards keep the sale price and the shelf count", () => {
   assert.equal(motors[1]?.status, "out_of_stock");
   const hardware = csHardwareOffers(html);
   assert.equal(hardware.length, 1);
-  assert.equal(hardware[0]?.vendor, "CS Rocketry");
+  assert.equal(hardware[0]?.vendor, "Chris' Rocket Supplies");
   assert.equal(hardware[0]?.kind, "complete");
 });
 

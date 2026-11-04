@@ -4,6 +4,8 @@ const ALLOWED = new Set([
   "siriusrocketry.biz",
   "www.moto-joe.com",
   "moto-joe.com",
+  "www.thrustcurve.org",
+  "thrustcurve.org",
 ]);
 
 export default {

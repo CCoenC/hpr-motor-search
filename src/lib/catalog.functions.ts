@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { applyMotorman, fetchMotormanPages } from "@/lib/motorman";
+import { fetchJsonUrl } from "@/lib/scrape/http";
 import type { Catalog, Sample } from "@/lib/motors";
-
-const UA = "Mozilla/5.0 (compatible; HPRMotorSearch/1.0; +https://github.com/CCoenC/hpr-motor-search)";
 
 let catalogCache: { at: number; data: Catalog } | null = null;
 const curveCache = new Map<string, { samples: Sample[]; note: string }>();
@@ -26,19 +25,10 @@ type TcMotor = {
   commonName?: string;
 };
 
-async function postJson(url: string, body: unknown) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "User-Agent": UA,
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(20000),
-  });
-  if (!response.ok) throw new Error(`ThrustCurve ${response.status}`);
-  return response.json() as Promise<{ results?: TcMotor[] | Array<{ samples?: Sample[] }> }>;
+async function postJson(url: string, body: Record<string, string>) {
+  const query = new URLSearchParams(body).toString();
+  const found = await fetchJsonUrl(`${url}?${query}`);
+  return found as { results?: TcMotor[] | Array<{ samples?: Sample[] }> };
 }
 
 function pickMotor(results: TcMotor[], designation: string, commonName: string) {

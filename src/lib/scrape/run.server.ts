@@ -16,7 +16,7 @@ import seedCatalog from "../../../data/motor-catalog.json";
 
 const SPEC_MAX_AGE = 24 * 60 * 60 * 1000;
 const TC_SEARCH = "https://www.thrustcurve.org/api/v1/search.json";
-const TC_MAKERS = ["AeroTech", "Cesaroni", "Loki Research"] as const;
+const TC_MAKERS = ["AeroTech", "Cesaroni", "Loki Research", "Animal Motor Works"] as const;
 
 type Settings = { intervalMinutes: number | null };
 type CacheFile = { ranAt: string; intervalMinutes: number | null; offers: StoredOffer[]; vendors: ScrapeMeta["vendors"] };

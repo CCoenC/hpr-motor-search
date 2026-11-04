@@ -15,6 +15,7 @@ const MAKERS: Record<string, string[]> = {
   AeroTech: ["AeroTech"],
   "Cesaroni Technology": ["Cesaroni"],
   "Loki Research": ["Loki Research", "Loki"],
+  "Animal Motor Works": ["Animal Motor Works", "AMW"],
 };
 
 type CurveQuery = { manufacturer: string; designation: string; commonName: string };

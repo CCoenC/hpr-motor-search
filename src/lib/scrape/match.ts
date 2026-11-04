@@ -124,6 +124,7 @@ function codesFrom(title: string) {
     const thrust = Number(match[1].slice(1));
     if (thrust < 2) continue;
     codes.add(`${match[1]}${match[2]}`);
+    if (match[2].length >= 2) codes.add(match[1]);
   }
   for (const match of text.matchAll(/\b([A-O])\s*(\d{1,4}(?:\.\d)?)\b/g)) {
     if (Number(match[2]) < 2) continue;
@@ -133,6 +134,7 @@ function codesFrom(title: string) {
 }
 
 function makerHint(title: string) {
+  if (/animal motor works|\bamw\b/i.test(title)) return "Animal Motor Works";
   if (/cesaroni|\bcti\b|skidmark|blue streak|smoky sam/i.test(title)) return "Cesaroni Technology";
   if (/\bloki\b/i.test(title)) return "Loki Research";
   if (/aerotech|q-?jet|enerjet|\brms\b|\bdms\b/i.test(title)) return "AeroTech";
@@ -150,6 +152,14 @@ function propellantHint(title: string) {
     [/metalstorm|dark matter/i, /metalstorm|dark matter/i],
     [/smoky sam/i, /smoky/i],
     [/skid ?mark/i, /skid/i],
+    [/blue baboon/i, /blue baboon/i],
+    [/white wolf/i, /white wolf/i],
+    [/red rhino/i, /red rhino/i],
+    [/green gorilla/i, /green gorilla/i],
+    [/black bear/i, /black bear/i],
+    [/super tiger/i, /super tiger/i],
+    [/tamed tiger/i, /tamed tiger/i],
+    [/wild wolf/i, /wild wolf/i],
     [/blue streak/i, /blue streak/i],
     [/white thunder/i, /white thunder/i],
     [/spitfire/i, /spitfire/i],

@@ -327,6 +327,9 @@ const SIRIUS_ROOTS = [
 const AMW_ROOTS = [
   "https://cart.amwprox.com/index.php?option=com_virtuemart&view=category&virtuemart_category_id=102&Itemid=533&limit=150",
   "https://cart.amwprox.com/index.php?option=com_virtuemart&view=category&virtuemart_category_id=2&Itemid=536&limit=150",
+  "https://cart.amwprox.com/index.php?option=com_virtuemart&view=category&virtuemart_category_id=12&limit=150",
+  "https://cart.amwprox.com/index.php?option=com_virtuemart&view=category&virtuemart_category_id=13&limit=150",
+  "https://cart.amwprox.com/index.php?option=com_virtuemart&view=category&virtuemart_category_id=14&limit=150",
 ];
 const MOTO_ROOTS = [
   "https://www.moto-joe.com/index.php?route=product/category&path=59_66&limit=100",
@@ -441,24 +444,51 @@ export async function scrapeAmw(checkedAt: string): Promise<VendorPull> {
   }
 }
 
+const AMW_PROPELLANT: Record<string, string> = {
+  BB: "Blue Baboon",
+  WW: "White Wolf",
+  WT: "White Wolf",
+  SK: "Skidmark",
+  ST: "Super Tiger",
+  RR: "Red Rhino",
+  GG: "Green Gorilla",
+  TT: "Tamed Tiger",
+  WL: "Wild Wolf",
+  BK: "Black Bear",
+};
+
+function amwOwn(name: string, blurb: string) {
+  const text = `${name} ${blurb}`.replace(/\s+/g, " ").trim();
+  const code = name.match(/^([A-O]\d{2,4})(BB|WW|WT|SK|ST|RR|GG|TT|WL|BK)$/i);
+  const grain = text.match(/\b(\d{2})-(\d{3,5})-(BB|WW|WT|SK|ST|RR|GG|TT|WL|BK)\b/i);
+  const suffix = (code?.[2] ?? grain?.[3])?.toUpperCase();
+  const propellant = suffix ? AMW_PROPELLANT[suffix] : null;
+  if (!propellant) return { title: name, hint: null as string | null };
+  const hint = grain ? `${grain[3].toUpperCase()}-${grain[1]}-${grain[2]}` : null;
+  return { title: `${name} ${propellant} Animal Motor Works ${blurb}`.replace(/\s+/g, " ").trim(), hint };
+}
+
 export function amwOffers(html: string): RawOffer[] {
   const offers: RawOffer[] = [];
   for (const part of html.split('class="product floatleft').slice(1)) {
     const title = part.match(/<h2>\s*<a[^>]*href="([^"]+)"[^>]*>\s*([^<]+)/i);
     if (!title || /view=category/i.test(title[1])) continue;
     const name = title[2].replace(/\*/g, "").replace(/\s+/g, " ").trim();
-    if (!/[A-O]\d{1,4}/i.test(name)) continue;
+    if (!/[A-O]\d{1,4}/i.test(name) && !/\d{2}-\d{3,5}-(?:BB|WW|WT|SK|ST|RR|GG|TT|WL|BK)\b/i.test(name)) continue;
     const price = part.match(/PricesalesPrice"[^>]*>[\s\S]{0,160}?\$([0-9,.]+)/i);
     if (!price) continue;
+    const blurb = part.match(/class="product_s_desc"[^>]*>([\s\S]*?)<\//i)?.[1]?.replace(/<[^>]+>/g, " ") ?? "";
     const count = Number(part.match(/(\d+)\s+In Stock/i)?.[1] ?? 0);
+    const own = amwOwn(name, blurb);
     offers.push({
-      title: name,
+      title: own.title,
       url: htmlUrl(title[1], "https://cart.amwprox.com").href,
       status: count > 0 ? "in_stock" : "out_of_stock",
       priceCents: centsFromDollars(price[1]),
       packSize: packSizeOf(name),
       stockCount: count > 0 ? count : null,
       leadTime: null,
+      designationHint: own.hint,
     });
   }
   return offers;

@@ -170,6 +170,22 @@ test("a trusted vendor replaces its snapshot listings", () => {
   assert.equal(stored.length, 1);
 });
 
+test("amw's own reloads name the propellant and the grain", () => {
+  const offers = amwOffers(
+    `<div class="product floatleft"><h2><a href="/index.php?view=productdetails&virtuemart_product_id=9">M1900BB</a></h2><div class="product_s_desc">75-6000 reload</div><span class="PricesalesPrice">$475.00</span> 2 In Stock</div><div class="product floatleft"><h2><a href="/index.php?view=productdetails&virtuemart_product_id=8">54-2550-SK reload</a></h2><span class="PricesalesPrice">$400.00</span> 1 In Stock</div>`,
+  );
+  assert.match(offers[0]?.title ?? "", /Blue Baboon/);
+  assert.match(offers[0]?.title ?? "", /Animal Motor Works/);
+  assert.equal(offers[1]?.designationHint, "SK-54-2550");
+  const index = buildIndex([
+    motor({ id: 40, designation: "BB-75-6000", common_name: "M1900", manufacturer: "Animal Motor Works", propellant: "Blue Baboon", diameter_mm: 75 }),
+    motor({ id: 41, designation: "M1900W", common_name: "M1900", manufacturer: "Loki Research", propellant: "White", diameter_mm: 75 }),
+    motor({ id: 42, designation: "SK-54-2550", common_name: "K1000", manufacturer: "Animal Motor Works", propellant: "Skidmark", diameter_mm: 54 }),
+  ]);
+  assert.equal(matchMotor(offers[0]?.title ?? "", index, offers[0]?.designationHint)?.designation, "BB-75-6000");
+  assert.equal(matchMotor(offers[1]?.title ?? "", index, offers[1]?.designationHint)?.designation, "SK-54-2550");
+});
+
 test("the same AMW product in two categories is counted once", () => {
   const catalog = [
     motor({ id: 20, designation: "K850DM", common_name: "K850", manufacturer: "AeroTech", propellant: "Dark Matter", diameter_mm: 54 }),

@@ -47,9 +47,9 @@ export function Board({
 }) {
   const [classes, setClasses] = useState<string[]>([]);
   const [maker, setMaker] = useState("");
-  const [diameter, setDiameter] = useState("");
+  const [diameterPicks, setDiameterPicks] = useState<string[]>([]);
   const [propellant, setPropellant] = useState("");
-  const [vendor, setVendor] = useState("");
+  const [vendorPicks, setVendorPicks] = useState<string[]>([]);
   const [stockOnly, setStockOnly] = useState(true);
   const [sparky, setSparky] = useState(false);
   const [reloadOnly, setReloadOnly] = useState(false);
@@ -100,7 +100,7 @@ export function Board({
 
   useEffect(() => {
     setVisible(48);
-  }, [query, classes, maker, diameter, propellant, vendor, stockOnly, sparky, reloadOnly, singleUseOnly, starredOnly, includeOld, maxPrice, sort]);
+  }, [query, classes, maker, diameterPicks, propellant, vendorPicks, stockOnly, sparky, reloadOnly, singleUseOnly, starredOnly, includeOld, maxPrice, sort]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -133,10 +133,10 @@ export function Board({
     const list = motors.filter((motor) => {
       if (classes.length && !classes.includes(motor.impulse_class)) return false;
       if (maker && motor.manufacturer !== maker) return false;
-      if (diameter && String(motor.diameter_mm) !== diameter) return false;
+      if (diameterPicks.length && !diameterPicks.includes(String(motor.diameter_mm))) return false;
       if (propellant && motor.propellant !== propellant) return false;
-      if (vendor) {
-        const hit = motor.listings.some((listing) => listing.vendor === vendor && (!stockOnly || listing.status === "in_stock"));
+      if (vendorPicks.length) {
+        const hit = motor.listings.some((listing) => vendorPicks.includes(listing.vendor) && (!stockOnly || listing.status === "in_stock"));
         if (!hit) return false;
       } else if (stockOnly && !query && !motor.in_stock) {
         return false;
@@ -166,7 +166,7 @@ export function Board({
       return (b.burn_time_s || 0) - (a.burn_time_s || 0);
     });
     return list;
-  }, [classes, diameter, includeOld, maker, maxPrice, motors, propellant, query, reloadOnly, singleUseOnly, sort, sparky, stars, starredOnly, stockOnly, vendor]);
+  }, [classes, diameterPicks, includeOld, maker, maxPrice, motors, propellant, query, reloadOnly, singleUseOnly, sort, sparky, stars, starredOnly, stockOnly, vendorPicks]);
 
   const open = motors.find((motor) => String(motor.id) === motorId) ?? null;
   const compareMotors = compare
@@ -204,9 +204,9 @@ export function Board({
   function reset() {
     setClasses([]);
     setMaker("");
-    setDiameter("");
+    setDiameterPicks([]);
     setPropellant("");
-    setVendor("");
+    setVendorPicks([]);
     setStockOnly(true);
     setSparky(false);
     setReloadOnly(false);
@@ -410,16 +410,12 @@ export function Board({
               ))}
             </select>
           </Field>
-          <Field label="Diameter">
-            <select value={diameter} onChange={(event) => setDiameter(event.target.value)}>
-              <option value="">All</option>
-              {diameters.map((item) => (
-                <option key={item} value={item}>
-                  {item} mm
-                </option>
-              ))}
-            </select>
-          </Field>
+          <Checks
+            label="Diameter"
+            options={diameters.map((item) => ({ value: String(item), label: `${item} mm` }))}
+            selected={diameterPicks}
+            onToggle={(value) => setDiameterPicks((current) => togglePick(current, value))}
+          />
           <Field label="Propellant">
             <select value={propellant} onChange={(event) => setPropellant(event.target.value)}>
               <option value="">All</option>
@@ -428,14 +424,12 @@ export function Board({
               ))}
             </select>
           </Field>
-          <Field label="Vendor">
-            <select value={vendor} onChange={(event) => setVendor(event.target.value)}>
-              <option value="">All</option>
-              {vendors.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </Field>
+          <Checks
+            label="Vendor"
+            options={vendors.map((item) => ({ value: item, label: item }))}
+            selected={vendorPicks}
+            onToggle={(value) => setVendorPicks((current) => togglePick(current, value))}
+          />
           <div className="my-2 flex flex-col gap-1 text-sm">
             <Check label="In stock somewhere" checked={stockOnly} onChange={setStockOnly} />
             <Check label="Sparky only" checked={sparky} onChange={setSparky} />
@@ -657,6 +651,34 @@ export function Board({
       {pileOpen ? <PileModal cart={cart} onClose={() => setPileOpen(false)} onChange={setCart} /> : null}
         </>
       )}
+    </div>
+  );
+}
+
+function togglePick(current: string[], value: string) {
+  return current.includes(value) ? current.filter((item) => item !== value) : [...current, value];
+}
+
+function Checks({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <div className="mb-2 text-sm text-muted">
+      {label}
+      <span className="mt-0.5 block text-[11px] text-faint">None checked means all</span>
+      <div className="mt-1.5 max-h-40 overflow-y-auto rounded-xl border border-line bg-bg-2 px-3 py-1">
+        {options.map((option) => (
+          <Check key={option.value} label={option.label} checked={selected.includes(option.value)} onChange={() => onToggle(option.value)} />
+        ))}
+      </div>
     </div>
   );
 }

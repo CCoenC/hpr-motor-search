@@ -122,7 +122,8 @@ export const getCurve = createServerFn({ method: "POST" })
       };
       curveCache.set(cacheKey, result);
       return result;
-    } catch {
-      return { samples: [] as Sample[], note: "ThrustCurve is down. Specs, price, and stock still load." };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "request failed";
+      return { samples: [] as Sample[], note: `Couldn't load the curve. ${reason}` };
     }
   });

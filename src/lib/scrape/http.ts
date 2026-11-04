@@ -6,14 +6,34 @@ const RELAY_HOSTS = new Set(["cart.amwprox.com", "www.siriusrocketry.biz", "siri
 
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-export async function fetchJsonUrl(url: string, ms = 15000): Promise<unknown> {
-  const direct = await fetchDirect(url, ms, BROWSER_UA);
-  const parsed = jsonBody(direct);
-  if (parsed) return parsed;
-  const relayed = await fetchViaRelay(url, ms, BROWSER_UA);
-  const again = relayed ? jsonBody({ ok: relayed.ok, text: relayed.text }) : null;
-  if (again) return again;
-  throw new Error(direct.ok ? "ThrustCurve returned a non-JSON page." : `ThrustCurve ${direct.status || "unreachable"}`);
+export async function fetchJsonUrl(url: string, ms = 8000): Promise<unknown> {
+  let directNote = "direct failed";
+  try {
+    const direct = await fetchDirect(url, ms, BROWSER_UA);
+    const parsed = jsonBody(direct);
+    if (parsed) return parsed;
+    directNote = direct.ok ? `direct non-json ${snippet(direct.text)}` : `direct ${direct.status} ${snippet(direct.text)}`;
+  } catch (error) {
+    directNote = `direct ${error instanceof Error ? error.message : "failed"}`;
+  }
+
+  let relayNote = "relay not tried";
+  try {
+    const relayed = await fetchViaRelay(url, ms, BROWSER_UA);
+    if (!relayed) relayNote = "relay unavailable";
+    else {
+      const parsed = jsonBody(relayed);
+      if (parsed) return parsed;
+      relayNote = `relay ${relayed.status} ${snippet(relayed.text)}`;
+    }
+  } catch (error) {
+    relayNote = `relay ${error instanceof Error ? error.message : "failed"}`;
+  }
+  throw new Error(`${directNote}; ${relayNote}`);
+}
+
+function snippet(text: string) {
+  return text.replace(/\s+/g, " ").trim().slice(0, 90);
 }
 
 function jsonBody(result: { ok: boolean; text: string }) {
@@ -31,7 +51,8 @@ export async function fetchText(url: string, ms = 15000) {
   const direct = await fetchDirect(url, ms);
   if (!needsRelay(url, direct)) return direct;
   const relayed = await fetchViaRelay(url, ms);
-  return relayed ?? direct;
+  if (!relayed?.ok || relayed.text.trim() === "Hello World!") return direct;
+  return relayed;
 }
 
 export function isChallenge(text: string) {
@@ -81,12 +102,11 @@ async function fetchViaRelay(url: string, ms: number, userAgent = SCRAPE_UA) {
       signal: controller.signal,
     });
     const text = await response.text();
-    if (response.status === 401 || text.trim() === "Hello World!") return null;
     const finalUrl = response.headers.get("x-relay-url") || url;
     const status = Number(response.headers.get("x-relay-status") || response.status);
-    return { ok: status >= 200 && status < 300, status, text, url: finalUrl };
-  } catch {
-    return null;
+    return { ok: status >= 200 && status < 300 && text.trim() !== "Hello World!", status, text, url: finalUrl };
+  } catch (error) {
+    return { ok: false, status: 0, text: error instanceof Error ? error.message : "relay failed", url };
   } finally {
     clearTimeout(timer);
   }

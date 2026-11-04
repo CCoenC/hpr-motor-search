@@ -226,7 +226,7 @@ export function Board({
           </div>
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">HPR Motor Search</h1>
-            <p className="text-sm text-muted">AeroTech, Cesaroni, Loki, and Quest Q-Jets — who has it, what it costs, how many are on the shelf.</p>
+            <p className="text-sm text-muted">AeroTech, Cesaroni, Loki, AMW, and Quest Q-Jets — who has it, what it costs, how many are on the shelf.</p>
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">

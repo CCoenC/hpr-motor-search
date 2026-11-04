@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { getCurve } from "@/lib/catalog.functions";
+import { loadCurve } from "@/lib/thrustcurve";
 import {
   CERTS,
   hasCurve,
@@ -158,12 +158,10 @@ export function CompareModal({ motors, onClose }: { motors: Motor[]; onClose: ()
         const motor = motors[index];
         if (!hasCurve(motor)) continue;
         try {
-          const result = await getCurve({
-            data: {
-              manufacturer: motor.manufacturer,
-              designation: motor.designation,
-              commonName: motor.common_name,
-            },
+          const result = await loadCurve({
+            manufacturer: motor.manufacturer,
+            designation: motor.designation,
+            commonName: motor.common_name,
           });
           if (result.samples.length) {
             next.push({ name: motor.designation, color: COLORS[index] ?? COLORS[0], samples: result.samples });

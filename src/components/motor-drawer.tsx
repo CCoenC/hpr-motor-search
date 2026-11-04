@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
-import { getCurve } from "@/lib/catalog.functions";
+import { loadCurve } from "@/lib/thrustcurve";
 import {
   age,
   hasCurve,
@@ -53,12 +53,10 @@ export function MotorDrawer({
     }
     setSamples([]);
     setNote("Pulling the thrust curve…");
-    void getCurve({
-      data: {
-        manufacturer: motor.manufacturer,
-        designation: motor.designation,
-        commonName: motor.common_name,
-      },
+    void loadCurve({
+      manufacturer: motor.manufacturer,
+      designation: motor.designation,
+      commonName: motor.common_name,
     })
       .then((result) => {
         if (cancel) return;
